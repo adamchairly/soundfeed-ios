@@ -25,8 +25,11 @@ final class SettingsViewModel {
             recoveryCode = user.recoveryCode
             email = user.email ?? ""
             emailNotifications = user.emailNotifications
+        } catch is CancellationError {
+            // Ignore task cancellation 
         } catch {
             self.error = error.localizedDescription
+            await dismissMessageAfterDelay()
         }
         isLoading = false
     }
@@ -92,17 +95,19 @@ final class SettingsViewModel {
         isSyncing = true
         error = nil
         successMessage = nil
-        
+
         do {
             try await syncService.syncReleases()
             await loadSync()
             successMessage = "Sync completed successfully."
             await dismissMessageAfterDelay()
+        } catch is CancellationError {
+            // Ignore
         } catch {
             self.error = error.localizedDescription
             await dismissMessageAfterDelay()
         }
-        
+
         isSyncing = false
     }
 }
