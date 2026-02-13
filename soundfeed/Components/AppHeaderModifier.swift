@@ -12,7 +12,7 @@ struct AppHeaderModifier: ViewModifier {
             }
             .padding(.horizontal)
             .padding(.vertical, 8)
-            .background()
+            .background(Color(.secondarySystemGroupedBackground))
 
             content
         }

@@ -19,6 +19,11 @@ struct FeedView: View {
                             Task { await viewModel.loadReleases() }
                         }
                     }
+                } else if viewModel.releases.isEmpty {
+                    Text("No new releases. You are up to date!")
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                        .containerRelativeFrame(.vertical)
                 } else {
                     ForEach(viewModel.groupedByMonth, id: \.key) { group in
                         VStack(alignment: .leading, spacing: 10) {

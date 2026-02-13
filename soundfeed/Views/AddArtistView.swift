@@ -14,8 +14,6 @@ struct AddArtistView: View {
         ScrollView {
             VStack(spacing: 0) {
 
-                // MARK: - Search
-
                 sectionGroup(header: "Search") {
                     HStack {
                         Image(systemName: "magnifyingglass")
@@ -37,8 +35,6 @@ struct AddArtistView: View {
                         }
                     }
                 }
-
-                // MARK: - Search Results
 
                 if !viewModel.searchResults.isEmpty {
                     sectionGroup(header: "Results") {
@@ -73,18 +69,15 @@ struct AddArtistView: View {
                     }
                 }
 
-                // MARK: - Artist Grid
-
                 if viewModel.isLoading && viewModel.artists.isEmpty {
                     ProgressView()
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding(.top, 32)
                 } else if viewModel.artists.isEmpty {
-                    sectionGroup {
-                        Text("No artists yet. Search and add artists above.")
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .center)
-                    }
+                    Text("You did not add any artist yet.")
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                        .containerRelativeFrame(.vertical)
                 } else {
                     sectionGroup(header: "Your Artists", footer: "These are the artists that you follow. The system checks their new releases, and shows them to you.") {
                         LazyVGrid(columns: columns, spacing: 16) {
@@ -94,8 +87,6 @@ struct AddArtistView: View {
                         }
                     }
                 }
-
-                // MARK: - Messages
 
                 if let error = viewModel.error {
                     sectionGroup {
@@ -118,8 +109,6 @@ struct AddArtistView: View {
             await viewModel.loadArtists()
         }
     }
-
-    // MARK: - Subviews
 
     private func artistCell(_ artist: Artist) -> some View {
         VStack(spacing: 6) {

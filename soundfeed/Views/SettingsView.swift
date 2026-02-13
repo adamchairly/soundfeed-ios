@@ -9,6 +9,11 @@ struct SettingsView: View {
         colorScheme == .dark ? Color(.systemGray3) : Color(.darkGray)
     }
 
+    private var isValidEmail: Bool {
+        let predicate = NSPredicate(format: "SELF MATCHES %@", "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}")
+        return predicate.evaluate(with: viewModel.email)
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
@@ -78,7 +83,7 @@ struct SettingsView: View {
                                 .textInputAutocapitalization(.characters)
                                 .autocorrectionDisabled()
                                 .onChange(of: viewModel.recoveryInput) { oldValue, newValue in
-                                    let filtered = newValue.uppercased().filter { $0.isLetter }
+                                    let filtered = newValue.uppercased().filter { $0.isLetter || $0.isNumber }
 
                                     var formatted = ""
                                     for (index, character) in filtered.enumerated() {
@@ -121,7 +126,7 @@ struct SettingsView: View {
                             }
                             .buttonStyle(.borderedProminent)
                             .tint(buttonTint)
-                            .disabled(viewModel.email.isEmpty)
+                            .disabled(!isValidEmail)
                         }
 
                         Divider()
@@ -133,7 +138,7 @@ struct SettingsView: View {
                             }
                         ))
                             .tint(buttonTint)
-                            .disabled(viewModel.email.isEmpty)
+                            .disabled(!isValidEmail)
                     }
                 }
 
