@@ -16,35 +16,14 @@ final class FeedViewModel {
 
     var groupedByMonth: [(key: String, label: String, releases: [Release])] {
         let sorted = releases.sorted { $0.releaseDate > $1.releaseDate }
-
-        var result: [(key: String, label: String, releases: [Release])] = []
-        var currentKey = ""
-        var currentGroup: [Release] = []
-        var currentLabel = ""
-
-        for release in sorted {
-            let key = release.monthYearKey
-            if key != currentKey {
-                if !currentGroup.isEmpty {
-                    result.append((key: currentKey, label: currentLabel, releases: currentGroup))
-                }
-                currentKey = key
-                currentLabel = release.monthYearLabel
-                currentGroup = [release]
-            } else {
-                currentGroup.append(release)
-            }
+        let grouped = Dictionary(grouping: sorted) { $0.monthYearKey }
+        return grouped.keys.sorted(by: >).map { key in
+            let items = grouped[key]!
+            return (key: key, label: items[0].monthYearLabel, releases: items)
         }
-
-        if !currentGroup.isEmpty {
-            result.append((key: currentKey, label: currentLabel, releases: currentGroup))
-        }
-
-        return result
     }
 
     func loadReleases() async {
-        guard !isLoading else { return }
         isLoading = true
         error = nil
 
@@ -53,6 +32,8 @@ final class FeedViewModel {
             releases = result.items
             currentPage = result.page
             totalPages = result.totalPages
+        } catch is CancellationError {
+            // Ignore task cancellation
         } catch {
             self.error = error.localizedDescription
         }
@@ -69,6 +50,8 @@ final class FeedViewModel {
             releases.append(contentsOf: result.items)
             currentPage = result.page
             totalPages = result.totalPages
+        } catch is CancellationError {
+            // Ignore task cancellation
         } catch {
             self.error = error.localizedDescription
         }

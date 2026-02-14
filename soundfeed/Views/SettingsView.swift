@@ -5,20 +5,17 @@ struct SettingsView: View {
     @Environment(\.colorScheme) private var colorScheme
     @AppStorage("appTheme") private var appTheme: AppTheme = .system
 
-    private var buttonTint: Color {
-        colorScheme == .dark ? Color(.systemGray3) : Color(.darkGray)
-    }
+    private var buttonTint: Color { .buttonTint(for: colorScheme) }
 
     private var isValidEmail: Bool {
-        let predicate = NSPredicate(format: "SELF MATCHES %@", "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}")
-        return predicate.evaluate(with: viewModel.email)
+        viewModel.email.wholeMatch(of: /[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/) != nil
     }
 
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
 
-                settingsGroup(header: "Appearance") {
+                SectionGroupView(header: "Appearance") {
                     Picker("Theme", selection: $appTheme) {
                         ForEach(AppTheme.allCases, id: \.self) { theme in
                             Text(theme.label).tag(theme)
@@ -27,7 +24,7 @@ struct SettingsView: View {
                     .pickerStyle(.segmented)
                 }
 
-                settingsGroup(header: "Sync", footer: "Soundfeed automatically syncs periodically, but you can manually request syncing once every 15 minutes.") {
+                SectionGroupView(header: "Sync", footer: "Soundfeed automatically syncs periodically, but you can manually request syncing once every 15 minutes.") {
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Sync Releases")
@@ -61,7 +58,7 @@ struct SettingsView: View {
                     }
                 }
 
-                settingsGroup(header: "Recovery", footer: "This is your unique recovery code. If you delete the app, you can restore your artists using this code.") {
+                SectionGroupView(header: "Recovery", footer: "This is your unique recovery code. If you delete the app, you can restore your artists using this code.") {
                     VStack(spacing: 12) {
                         if viewModel.recoveryCode.isEmpty && viewModel.isLoading {
                             ProgressView()
@@ -112,7 +109,7 @@ struct SettingsView: View {
                     }
                 }
 
-                settingsGroup(header: "Email", footer: "The email is not linked to your identity. It is only used to send a wrap of your recent releases, once a week.") {
+                SectionGroupView(header: "Email", footer: "The email is not linked to your identity. It is only used to send a wrap of your recent releases, once a week.") {
                     VStack(spacing: 12) {
                         HStack {
                             TextField("Email address", text: $viewModel.email)
@@ -142,50 +139,14 @@ struct SettingsView: View {
                     }
                 }
 
-                if let error = viewModel.error {
-                    settingsGroup {
-                        Label(error, systemImage: "exclamationmark.triangle")
-                            .foregroundStyle(.red)
-                    }
-                }
-
-                if let success = viewModel.successMessage {
-                    settingsGroup {
-                        Label(success, systemImage: "checkmark.circle")
-                            .foregroundStyle(.green)
-                    }
-                }
             }
             .padding(.horizontal, 24)
         }
         .background(Color(.systemGroupedBackground))
-        .refreshable {
-            await viewModel.loadUser()
-            await viewModel.loadSync()
-        }
+        .toast(message: viewModel.successMessage)
+        .errorAlert(error: $viewModel.error)
     }
 
-    private func settingsGroup<Content: View>(header: String? = nil, footer: String? = nil, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            if let header {
-                Text(header)
-                    .font(.headline)
-                    .foregroundStyle(.secondary)
-            }
-
-            content()
-                .padding(16)
-                .background(Color(.secondarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-
-            if let footer {
-                Text(footer)
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-            }
-        }
-        .padding(.top, 18)
-    }
 }
 
 #Preview {

@@ -2,8 +2,6 @@ import SwiftUI
 import SwiftfulLoadingIndicators
 
 struct SplashView: View {
-    @State private var rotation: Double = 0
-    
     var body: some View {
         VStack(spacing: 24) {
             Spacer()

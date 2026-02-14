@@ -79,11 +79,7 @@ final class APIClient {
             throw APIError.httpError(statusCode: httpResponse.statusCode)
         }
 
-        do {
-            return try decoder.decode(T.self, from: data)
-        } catch {
-            throw error
-        }
+        return try decoder.decode(T.self, from: data)
     }
 
     public func performVoid(_ request: URLRequest) async throws {
@@ -102,19 +98,6 @@ final class APIClient {
         }
     }
 
-    func fetchReleases(page: Int = 1, pageSize: Int = 20, sortDescending: Bool = true) async throws -> PageResult<Release> {
-        let request = try makeRequest(path: "release", queryItems: [
-            URLQueryItem(name: "page", value: "\(page)"),
-            URLQueryItem(name: "pageSize", value: "\(pageSize)"),
-            URLQueryItem(name: "sortDescending", value: "\(sortDescending)")
-        ])
-        return try await perform(request)
-    }
-
-    func dismissRelease(id: Int) async throws {
-        let request = try makeRequest(path: "release/\(id)", method: "DELETE")
-        try await performVoid(request)
-    }
 }
 
 
@@ -130,7 +113,12 @@ enum APIError: LocalizedError {
         case .invalidResponse:
             return "Invalid server response."
         case .httpError(let code):
-            return "Server returned status \(code)."
+            switch code {
+            case 401: return "Looks like you are not authenticated. Please try reloading the application."
+            case 404: return "Did you enter the information correctly? Please try again."
+            case 429: return "Too many requests. Please try again later."
+            default:  return "Something went wrong. Please try again."
+            }
         }
     }
 }

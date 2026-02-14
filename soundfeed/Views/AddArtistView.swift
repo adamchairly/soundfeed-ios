@@ -4,9 +4,7 @@ struct AddArtistView: View {
     @Bindable var viewModel: AddArtistViewModel
     @Environment(\.colorScheme) private var colorScheme
 
-    private var buttonTint: Color {
-        colorScheme == .dark ? Color(.systemGray3) : Color(.darkGray)
-    }
+    private var buttonTint: Color { .buttonTint(for: colorScheme) }
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 4)
 
@@ -14,7 +12,7 @@ struct AddArtistView: View {
         ScrollView {
             VStack(spacing: 0) {
 
-                sectionGroup(header: "Search") {
+                SectionGroupView(header: "Search") {
                     HStack {
                         Image(systemName: "magnifyingglass")
                             .foregroundStyle(.secondary)
@@ -37,7 +35,7 @@ struct AddArtistView: View {
                 }
 
                 if !viewModel.searchResults.isEmpty {
-                    sectionGroup(header: "Results") {
+                    SectionGroupView(header: "Results") {
                         VStack(spacing: 0) {
                             ForEach(viewModel.searchResults) { result in
                                 HStack(spacing: 12) {
@@ -79,7 +77,7 @@ struct AddArtistView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                         .containerRelativeFrame(.vertical)
                 } else {
-                    sectionGroup(header: "Your Artists", footer: "These are the artists that you follow. The system checks their new releases, and shows them to you.") {
+                    SectionGroupView(header: "Your Artists", footer: "These are the artists that you follow. The system checks their new releases, and shows them to you.") {
                         LazyVGrid(columns: columns, spacing: 16) {
                             ForEach(viewModel.artists) { artist in
                                 artistCell(artist)
@@ -88,26 +86,12 @@ struct AddArtistView: View {
                     }
                 }
 
-                if let error = viewModel.error {
-                    sectionGroup {
-                        Label(error, systemImage: "exclamationmark.triangle")
-                            .foregroundStyle(.red)
-                    }
-                }
-
-                if let success = viewModel.successMessage {
-                    sectionGroup {
-                        Label(success, systemImage: "checkmark.circle")
-                            .foregroundStyle(.green)
-                    }
-                }
             }
             .padding(.horizontal, 24)
         }
         .background(Color(.systemGroupedBackground))
-        .refreshable {
-            await viewModel.loadArtists()
-        }
+        .toast(message: viewModel.successMessage)
+        .errorAlert(error: $viewModel.error)
     }
 
     private func artistCell(_ artist: Artist) -> some View {
@@ -158,27 +142,6 @@ struct AddArtistView: View {
         .clipShape(RoundedRectangle(cornerRadius: 6))
     }
 
-    private func sectionGroup<Content: View>(header: String? = nil, footer: String? = nil, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            if let header {
-                Text(header)
-                    .font(.headline)
-                    .foregroundStyle(.secondary)
-            }
-
-            content()
-                .padding(16)
-                .background(Color(.secondarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-
-            if let footer {
-                Text(footer)
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-            }
-        }
-        .padding(.top, 18)
-    }
 }
 
 #Preview {

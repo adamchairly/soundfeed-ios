@@ -1,7 +1,7 @@
 import Foundation
 
 @Observable
-final class SettingsViewModel {
+final class SettingsViewModel: AutoDismissable {
 
     private let userService = UserService()
     private let syncService = SyncService()
@@ -17,6 +17,8 @@ final class SettingsViewModel {
     var lastSynced: Date?
     var isSyncing = false
 
+    @ObservationIgnored var onRecover: (() -> Void)?
+
     func loadUser() async {
         isLoading = true
         error = nil
@@ -26,14 +28,13 @@ final class SettingsViewModel {
             email = user.email ?? ""
             emailNotifications = user.emailNotifications
         } catch is CancellationError {
-            // Ignore task cancellation 
+            // Ignore task cancellation
         } catch {
             self.error = error.localizedDescription
-            await dismissMessageAfterDelay()
         }
         isLoading = false
     }
-    
+
     func loadSync() async {
         do {
             lastSynced = try await syncService.getLastSynced()
@@ -48,13 +49,9 @@ final class SettingsViewModel {
         successMessage = nil
         do {
             try await userService.recover(code: recoveryInput)
-            successMessage = "Account recovered successfully."
-            recoveryInput = ""
-            await loadUser()
-            await dismissMessageAfterDelay()
+            onRecover?()
         } catch {
             self.error = error.localizedDescription
-            await dismissMessageAfterDelay()
         }
     }
 
@@ -63,11 +60,9 @@ final class SettingsViewModel {
         successMessage = nil
         do {
             try await userService.updateEmailSettings(email: email, enabled: emailNotifications)
-            successMessage = "Email saved."
-            await dismissMessageAfterDelay()
+            await showSuccess("Email saved.")
         } catch {
             self.error = error.localizedDescription
-            await dismissMessageAfterDelay()
         }
     }
 
@@ -80,16 +75,9 @@ final class SettingsViewModel {
         } catch {
             emailNotifications = !enabled
             self.error = error.localizedDescription
-            await dismissMessageAfterDelay()
         }
     }
-    
-    private func dismissMessageAfterDelay() async {
-        try? await Task.sleep(for: .seconds(3))
-        successMessage = nil
-        error = nil
-    }
-    
+
     func syncReleases() async {
         guard !isSyncing else { return }
         isSyncing = true
@@ -99,13 +87,11 @@ final class SettingsViewModel {
         do {
             try await syncService.syncReleases()
             await loadSync()
-            successMessage = "Sync completed successfully."
-            await dismissMessageAfterDelay()
+            await showSuccess("Sync completed.")
         } catch is CancellationError {
             // Ignore
         } catch {
             self.error = error.localizedDescription
-            await dismissMessageAfterDelay()
         }
 
         isSyncing = false

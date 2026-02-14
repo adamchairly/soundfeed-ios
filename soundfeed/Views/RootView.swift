@@ -31,22 +31,27 @@ struct RootView: View {
                 .tabBarMinimizeBehavior(.onScrollDown)
             }
         }
-        .task {
+        .task(id: isLoading) {
+            guard isLoading else { return }
+            settingsViewModel.onRecover = {
+                feedViewModel = FeedViewModel()
+                settingsViewModel = SettingsViewModel()
+                addArtistViewModel = AddArtistViewModel()
+                selectedTab = .feed
+                isLoading = true
+            }
             await loadInitialData()
         }
     }
-    
+
     private func loadInitialData() async {
         async let releases: () = feedViewModel.loadReleases()
         async let user: () = settingsViewModel.loadUser()
         async let sync: () = settingsViewModel.loadSync()
         async let artists: () = addArtistViewModel.loadArtists()
 
-        await releases
-        await user
-        await sync
-        await artists
-        
+        _ = await (releases, user, sync, artists)
+
         isLoading = false
     }
 }

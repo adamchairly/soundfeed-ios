@@ -1,7 +1,7 @@
 import Foundation
 
 @Observable
-final class AddArtistViewModel {
+final class AddArtistViewModel: AutoDismissable {
 
     private let artistService = ArtistService()
 
@@ -65,14 +65,12 @@ final class AddArtistViewModel {
         successMessage = nil
         do {
             try await artistService.addArtist(spotifyUrl: spotifyUrl)
-            successMessage = "Artist added."
             searchResults = []
             searchQuery = ""
             await loadArtists()
-            await dismissMessageAfterDelay()
+            await showSuccess("Artist added.")
         } catch {
             self.error = error.localizedDescription
-            await dismissMessageAfterDelay()
         }
     }
 
@@ -85,13 +83,6 @@ final class AddArtistViewModel {
         } catch {
             artists = backup
             self.error = error.localizedDescription
-            await dismissMessageAfterDelay()
         }
-    }
-
-    private func dismissMessageAfterDelay() async {
-        try? await Task.sleep(for: .seconds(3))
-        successMessage = nil
-        error = nil
     }
 }
