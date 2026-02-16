@@ -11,6 +11,10 @@ final class SettingsViewModel: AutoDismissable {
     var email: String = ""
     var emailNotifications: Bool = false
 
+    var notificationsEnabled: Bool = NotificationService.isEnabled
+    var notificationHour: Int = NotificationService.preferredHour
+    var notificationMinute: Int = NotificationService.preferredMinute
+
     var isLoading = false
     var error: String?
     var successMessage: String?
@@ -76,6 +80,38 @@ final class SettingsViewModel: AutoDismissable {
             emailNotifications = !enabled
             self.error = error.localizedDescription
         }
+    }
+
+    func togglePushNotifications(_ enabled: Bool) async {
+        if enabled {
+            let granted = await NotificationService.requestAuthorization()
+            guard granted else {
+                notificationsEnabled = false
+                error = "Notification permission denied. Enable it in Settings."
+                return
+            }
+            NotificationService.isEnabled = true
+            NotificationService.lastCheckDate = Date()
+            NotificationService.scheduleBackgroundCheck()
+        } else {
+            NotificationService.isEnabled = false
+            NotificationService.cancelBackgroundCheck()
+        }
+        notificationsEnabled = NotificationService.isEnabled
+    }
+
+    func updateNotificationTime(hour: Int, minute: Int) {
+        notificationHour = hour
+        notificationMinute = minute
+        NotificationService.preferredHour = hour
+        NotificationService.preferredMinute = minute
+        if notificationsEnabled {
+            NotificationService.scheduleBackgroundCheck()
+        }
+    }
+
+    func sendTestNotification() async {
+        await NotificationService.sendTestNotification()
     }
 
     func syncReleases() async {

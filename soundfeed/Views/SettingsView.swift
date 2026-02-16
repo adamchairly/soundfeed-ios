@@ -7,6 +7,24 @@ struct SettingsView: View {
 
     private var buttonTint: Color { .buttonTint(for: colorScheme) }
 
+    private var notificationTime: Binding<Date> {
+        Binding(
+            get: {
+                var components = DateComponents()
+                components.hour = viewModel.notificationHour
+                components.minute = viewModel.notificationMinute
+                return Calendar.current.date(from: components) ?? Date()
+            },
+            set: { newDate in
+                let components = Calendar.current.dateComponents([.hour, .minute], from: newDate)
+                let hour = components.hour ?? 9
+                let rawMinute = components.minute ?? 0
+                let minute = (rawMinute / 15) * 15
+                viewModel.updateNotificationTime(hour: hour, minute: minute)
+            }
+        )
+    }
+
     private var isValidEmail: Bool {
         viewModel.email.wholeMatch(of: /[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/) != nil
     }
@@ -136,6 +154,37 @@ struct SettingsView: View {
                         ))
                             .tint(buttonTint)
                             .disabled(!isValidEmail)
+                    }
+                }
+
+                SectionGroupView(header: "Notifications", footer: "Get notified when artists you follow drop new music. The app checks for new releases around your chosen time.") {
+                    VStack(spacing: 12) {
+                        Toggle("New release alerts", isOn: Binding(
+                            get: { viewModel.notificationsEnabled },
+                            set: { newValue in
+                                Task { await viewModel.togglePushNotifications(newValue) }
+                            }
+                        ))
+                        .tint(buttonTint)
+
+                        if viewModel.notificationsEnabled {
+                            Divider()
+
+                            DatePicker("Send notification daily at", selection: notificationTime, displayedComponents: .hourAndMinute)
+                                .datePickerStyle(.compact)
+
+                            Divider()
+
+                            HStack {
+                                Text("Send test notification")
+                                Spacer()
+                                Button("Test") {
+                                    Task { await viewModel.sendTestNotification() }
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .tint(buttonTint)
+                            }
+                        }
                     }
                 }
 
